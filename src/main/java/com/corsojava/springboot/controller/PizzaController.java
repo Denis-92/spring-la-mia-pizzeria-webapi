@@ -14,6 +14,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.corsojava.springboot.model.Pizza;
@@ -28,8 +29,19 @@ public class PizzaController {
 	PizzaRepository pizzaRepository;
 	
 	@GetMapping()	// Gestisce GET di /pizze
-	public List<Pizza> index() {
-		return pizzaRepository.findAll();
+	public ResponseEntity<List<Pizza>> index(@RequestParam(name = "filtro", required = false) String filtro) {
+		
+		List<Pizza> result;
+		if (filtro!=null && !filtro.isEmpty()) {
+			result = pizzaRepository.findByNomeLike("%"+filtro+"%");
+		} else {
+			result = pizzaRepository.findAll();
+		}
+		
+		if (result.size() > 0)
+			return new ResponseEntity<List<Pizza>>(result, HttpStatus.OK);
+		else
+			return new ResponseEntity<List<Pizza>>(HttpStatus.NO_CONTENT);
 	}
 	
 	@GetMapping("{id}")
@@ -43,23 +55,33 @@ public class PizzaController {
 	}
 	
 	@PostMapping("/create")	// Gestisce POST di /pizze/create
-	public Pizza create(@RequestBody Pizza pizza) {
-		return pizzaRepository.save(pizza);
+	public ResponseEntity<Pizza> create(@RequestBody Pizza pizza) {
+		return new ResponseEntity<Pizza>( pizzaRepository.save(pizza), HttpStatus.OK);
 	}
 	
 	@PutMapping("{id}") //	Essendo di tipo PUT non va in conflitto con il dettaglio (tipo GET) pur avendo stesso indirizzo
-	public Pizza edit(@RequestBody Pizza pizza, @PathVariable("id") Integer id) {
-		Pizza pizzaResult = pizzaRepository.getReferenceById(id);
-		pizzaResult.setNome(pizza.getNome());
-		pizzaResult.setDescrizione(pizza.getDescrizione());
-		pizzaResult.setPrezzo(pizza.getPrezzo());
-		pizzaResult.setFoto(pizza.getFoto());
-		return pizzaRepository.save(pizzaResult);
+	public ResponseEntity<Pizza> edit(@RequestBody Pizza pizza, @PathVariable("id") Integer id) {
+		
+		Optional<Pizza> result = pizzaRepository.findById(id);
+
+		if (!result.isPresent()) {		
+			return new ResponseEntity<Pizza>(HttpStatus.NOT_FOUND);
+		} else {
+			pizzaRepository.save(pizza);
+			return new ResponseEntity<Pizza>(pizza, HttpStatus.OK);
+		}    	
 	}
 	
 	@DeleteMapping("{id}")	// Tipo DELETE di /pizze/{id}
-	public void delete(@PathVariable("id") Integer id) {
-		pizzaRepository.deleteById(id);
+	public ResponseEntity<Pizza> delete(@PathVariable("id") Integer id) {
+		
+		Optional<Pizza> pizzaResult = pizzaRepository.findById(id);		
+		if (pizzaResult.isPresent()) {			
+			pizzaRepository.deleteById(id);
+			return new ResponseEntity<Pizza>( HttpStatus.OK);
+		}			
+	    else
+	    	return new ResponseEntity<Pizza>(HttpStatus.NOT_FOUND);
 	}
 
 }
