@@ -11,7 +11,9 @@ function elencoPizze() {
             document.querySelector("#table_elenco_pizze").innerHTML +=
                 `
             <tr>
-                <td>${pizza.id}</td>
+                <td>
+                    <a href="./show.html?id=${pizza.id}">${pizza.id}</a>
+                </td>
                 <td>${pizza.nome}</td>
                 <td>${pizza.descrizione}</td>
                 <td>${pizza.prezzo} €</td>
